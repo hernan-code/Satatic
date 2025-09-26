@@ -1,0 +1,53 @@
+-- costo promedio de cada mes
+
+SELECT
+    d.IDARTICULO,
+    a.DESCRIPCION AS ARTICULO,
+
+    -- Costo promedio
+    ROUND(AVG(d.PRECIO_IVA), 0) AS COSTO_PROMEDIO,
+
+    -- Precio de venta estimado promedio
+    ROUND(AVG(d.PRECIO_IVA / 0.9), 0) AS PRECIO_VENTA_ESTIMADO,
+
+    -- Mes y Año numérico
+    EXTRACT(MONTH FROM m.FECHA) AS MES,
+    EXTRACT(YEAR FROM m.FECHA) AS ANIO,
+
+    -- Nombre del mes
+    CASE EXTRACT(MONTH FROM m.FECHA)
+        WHEN 1 THEN 'Enero' WHEN 2 THEN 'Febrero' WHEN 3 THEN 'Marzo'
+        WHEN 4 THEN 'Abril' WHEN 5 THEN 'Mayo' WHEN 6 THEN 'Junio'
+        WHEN 7 THEN 'Julio' WHEN 8 THEN 'Agosto' WHEN 9 THEN 'Septiembre'
+        WHEN 10 THEN 'Octubre' WHEN 11 THEN 'Noviembre' WHEN 12 THEN 'Diciembre'
+    END AS MES_NOMBRE,
+
+    -- Mes y año concatenado
+    CASE EXTRACT(MONTH FROM m.FECHA)
+        WHEN 1 THEN 'Enero' WHEN 2 THEN 'Febrero' WHEN 3 THEN 'Marzo'
+        WHEN 4 THEN 'Abril' WHEN 5 THEN 'Mayo' WHEN 6 THEN 'Junio'
+        WHEN 7 THEN 'Julio' WHEN 8 THEN 'Agosto' WHEN 9 THEN 'Septiembre'
+        WHEN 10 THEN 'Octubre' WHEN 11 THEN 'Noviembre' WHEN 12 THEN 'Diciembre'
+    END || ' ' || EXTRACT(YEAR FROM m.FECHA) AS MES_ANIO,
+
+    -- Familia
+    f.DESCRIPCION AS FAMILIA
+
+FROM DETALLEMOVIMIENTO d
+JOIN MOVIMIENTOS m ON m.IDMOVIMIENTO = d.IDMOVIMIENTO
+JOIN ARTICULO a ON a.IDARTICULO = d.IDARTICULO
+JOIN TIPOMOVIMIENTO t ON t.IDTIPOMOVIMIENTO = m.IDTIPOMOVIMIENTO
+LEFT JOIN FAMILIAARTICULO f ON f.IDFAMILIA = a.IDFAMILIA
+
+WHERE
+    t.IDTIPOMOVIMIENTO IN (26, 18, 4, 28, 29, 48, 57, 60, 66, 98, 99, 101, 102)
+    AND m.ESTADO <> 'A'
+    AND a.PRODUCCION = 0
+    AND M.FECHA BETWEEN :desde AND :hasta
+
+GROUP BY
+    d.IDARTICULO,
+    a.DESCRIPCION,
+    EXTRACT(MONTH FROM m.FECHA),
+    EXTRACT(YEAR FROM m.FECHA),
+    f.DESCRIPCION;
