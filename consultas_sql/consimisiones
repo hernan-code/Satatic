@@ -1,0 +1,80 @@
+WITH limitecredito AS
+     (SELECT C.IDPERSONA,
+             MAX(C.LIMITECREDITO) AS LIMITECREDITO
+      FROM CUENTAS C
+      INNER JOIN PERSONA P2 ON P2.IDPERSONA = C.IDPERSONA
+      WHERE C.LIMITECREDITO > 1
+      GROUP BY C.IDPERSONA) SELECT s.nombre AS sucursal_salida,
+                                   d2.DESCRIPCION AS deposito_salida,
+                                   m.idtalonario,
+                                   COALESCE(LC.LIMITECREDITO, 0) AS LIMITECREDITO,
+                                   m.idpersona,
+                                   P.PERSONA AS CLIENTE,
+                                   (CASE
+                                        WHEN p.documento ='' then p.ruc
+                                        else p.documento
+                                    end)as cedula,
+                                   p.ruc,
+                                   p.razonsocial,
+                                   p.direccion,
+                                   m.idmovimiento,
+                                   m.nromovimiento,
+                                   CAST(LPAD(COALESCE(S.COD_TIMBRADO, '0'), 3, '0') || '-' || LPAD(COALESCE(M .PEXPEDICION, '0'), 3, '0') || '-' || LPAD(COALESCE(M.NROMOVIMIENTO, '0'), 7, '0') AS VARCHAR(15)) AS NRO_FACTURA,
+                                   CAST(m.fecha AS date) AS fecha,
+                                   m.fecha_carga,
+                                   m.iduser,
+                                   a.BARCODE,
+                                   d.IDARTICULO,
+                                   a.descripcion,
+                                   SUM(d.cantidad) AS cantidad,
+                                   avg(d.precio_iva) AS precio_unitario,
+                                   d.PORC_DESCUENTO,
+                                   avg(CASE
+                                           WHEN d.IMPUESTO <> 0 THEN round((d.PRECIO_IVA - d.PORC_DESCUENTO /100 * d.PRECIO_IVA),0)
+                                           ELSE d.PRECIO_IVA
+                                       END) AS precio_unitario_con_descuento,
+                                   SUM((CASE
+                                            WHEN d.IMPUESTO <> 0 THEN round((d.PRECIO_IVA - d.PORC_DESCUENTO /100 * d.PRECIO_IVA),0)
+                                            ELSE d.PRECIO_IVA
+                                        END) * d.CANTIDAD) AS IMPORTE_TOTAL,
+                                   R.IDRECIBO,
+                                   R.TOTAL AS IMPORTE_RECIBO,
+                                   CASE
+                                       WHEN R.TOTAL IS NULL THEN 'NO'
+                                       ELSE 'SI'
+                                   END RECIBO_ASIGNADO
+   FROM MOVIMIENTOS m
+   INNER JOIN DETALLEMOVIMIENTO d ON d.idmovimiento = m.idmovimiento
+   INNER JOIN PERSONA p ON p.IDPERSONA = m.IDPERSONA
+   INNER JOIN SUCURSAL s ON s.IDSUCURSAL = m.IDSUCURSAL
+   INNER JOIN DEPOSITO d2 ON d2.IDDEPOSITO = d.IDDEPOSITO
+   INNER JOIN ARTICULO a ON a.IDARTICULO = d.IDARTICULO
+   LEFT JOIN DETALLERECIBO d3 ON D3.IDMOVIMIENTO = M.IDMOVIMIENTO
+   LEFT JOIN RECIBOS r ON R.IDRECIBO = D3.IDRECIBO
+   LEFT JOIN LIMITECREDITO lc ON lc.idpersona = m.idpersona
+   WHERE  m.estado <>'A'
+     AND M.IDTIPOMOVIMIENTO IN (30,
+                                37,104)
+   GROUP BY s.nombre,
+            d2.descripcion,
+            m.idtalonario,
+            lc.limitecredito,
+            m.idpersona,
+            p.razonsocial,
+            p.direccion,
+            m.idmovimiento,
+            m.nromovimiento,
+            M.fecha,
+            m.fecha_carga,
+            m.iduser,
+            a.barcode,
+            d.idarticulo,
+            a.descripcion,
+            nro_factura,
+            d.PORC_DESCUENTO,
+            P.PERSONA,
+            p.RUC,
+            p."DOCUMENTO",
+            R.TOTAL,
+            R.IDRECIBO
+   ORDER BY m.FECHA ASC
