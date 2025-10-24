@@ -53,8 +53,11 @@ WITH limitecredito AS
    LEFT JOIN RECIBOS r ON R.IDRECIBO = D3.IDRECIBO
    LEFT JOIN LIMITECREDITO lc ON lc.idpersona = m.idpersona
    WHERE  m.estado <>'A'
-     AND M.IDTIPOMOVIMIENTO IN (30,
-                                37,104)
+     AND M.IDTIPOMOVIMIENTO IN (30,37,104)
+     AND m.fecha BETWEEN  :desde AND :hasta
+    -- AND p.ruc = :ci
+   
+     AND p.idpersona = :idpersona
    GROUP BY s.nombre,
             d2.descripcion,
             m.idtalonario,
