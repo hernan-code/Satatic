@@ -1,0 +1,146 @@
+/*
+COMPRAS POR ARTICULO
+*/
+
+SELECT
+	TRIM(CASE  
+    WHEN CHAR_LENGTH(a.idarticulo) = 6 AND SUBSTRING(a.idarticulo FROM 1 FOR 1) = '1' THEN 'BCN'
+    WHEN CHAR_LENGTH(a.idarticulo) = 5 AND SUBSTRING(a.idarticulo FROM 1 FOR 1) = '1' THEN 'PARLA'
+    WHEN CHAR_LENGTH(a.idarticulo) = 5 AND SUBSTRING(a.idarticulo FROM 1 FOR 1) = '2' THEN 'GAMA'
+END) AS SERVER_ORIGEN,
+	C.BARCODE,
+	CAST (b.Fecha AS DATE) AS FECHA,
+	b.FECHA_CARGA,
+	b.idmovimiento,
+	b.NroMovimiento AS FACTURA,
+	CAST(
+        LPAD(COALESCE(b.NROPEDIDO, '0'),
+	3,
+	'0') || '-' ||
+        LPAD(COALESCE(b.PEXPEDICION, '0'),
+	3,
+	'0') || '-' ||
+        LPAD(COALESCE(b.NROMOVIMIENTO, '0'),
+	7,
+	'0') AS VARCHAR(15)
+    ) AS NRO_FACTURA,
+	tm.descripcion AS TipoMovimiento,
+	cn.descripcion AS condicion,
+	a.IdDeposito,
+	dp.Descripcion AS Deposito,
+	b.IdPersona,
+	p.Persona,
+	a.IdArticulo,
+	c.Descripcion AS Articulo,
+	d.Descripcion AS Presentacion,
+	cl.descripcion AS familia,
+	h.descripcion AS linea,
+	b.iduser AS USUARIO,
+	CASE
+		tm.tipo
+        WHEN 1 THEN a.Cantidad
+		ELSE CASE
+			b.PSPT_REF
+            WHEN 'POR DIF. DE PRECIO' THEN 0
+			ELSE a.Cantidad * -1
+		END
+	END AS cantidad,
+	b.IdMoneda,
+	round(CASE
+		WHEN A.CANTIDAD = 0 THEN 0
+		ELSE
+    CASE
+			tm.tipo
+        WHEN 1 THEN (a.GRAVADA / a.Cantidad)
+			ELSE (a.GRAVADAUSD / a.Cantidad) * -1
+		END
+	END,0) AS COSTO_UNIT_SIN_IVA,
+	round(CASE
+		WHEN A.CANTIDAD = 0 THEN 0
+		ELSE
+    CASE
+			tm.tipo
+        WHEN 1 THEN a.precio_iva
+			ELSE a.precio_iva * -1
+		END
+	END,0) AS COSTO_UNIT_CON_IVA,
+	/*case
+        tm.tipo
+        when 1 then a.preciousd_iva
+        else a.preciousd_iva * -1
+    end as preciousd_iva,*/
+	round(CASE
+		tm.tipo
+        WHEN 1 THEN a.impuesto
+		ELSE a.impuesto * -1
+	END,0) AS impuesto,
+	/*case
+        tm.tipo
+        when 1 then a.impuestousd
+        else a.impuestousd * -1
+    end as impuestousd,*/
+	/*case
+        tm.tipo
+        when 1 then a.GRAVADAUSD
+        else a.GRAVADAUSD * -1
+    end as GRAVADAUSD,*/
+	CASE
+		tm.tipo
+        WHEN 1 THEN a.exenta
+		ELSE a.exenta * -1
+	END AS exenta,
+	/*case
+        tm.tipo
+        when 1 then a.exentausd
+        else a.exentausd * -1
+    end as exentausd,*/
+	round(CASE
+		tm.tipo
+        WHEN 1 THEN a.gravada
+		ELSE a.gravada * -1
+	END,0) AS gravada,
+	round(CASE
+		tm.tipo
+        WHEN 1 THEN (a.precio_iva * a.Cantidad)
+		ELSE (a.precio_iva * a.Cantidad) * -1
+	END,0) AS ImporteTotal,
+	/*b.TipoCambio,*/
+	b.pspt_ref AS nota
+FROM
+	DetalleMovimiento a
+INNER JOIN Movimientos b
+          ON
+	(b.IdMovimiento = a.IdMovimiento)
+INNER JOIN Articulo c
+          ON
+	(c.IdArticulo = a.IdArticulo)
+INNER JOIN Deposito dp
+          ON
+	(dp.IdDeposito = a.IdDeposito)
+INNER JOIN Medida d
+          ON
+	(d.IdMedida = a.IdMedida)
+INNER JOIN TipoMovimiento tm
+          ON
+	(tm.IdTipoMovimiento = b.IdTipoMovimiento)
+INNER JOIN Persona p
+          ON
+	(p.IdPersona = b.IdPersona)
+INNER JOIN condicion cn
+          ON
+	(b.idcondicion = cn.idcondicion)
+LEFT JOIN familiaarticulo cl
+         ON
+	(cl.idfamilia = c.idfamilia)
+LEFT JOIN linea h
+         ON
+	(h.idlinea = c.idlinea)
+WHERE
+	b.Fecha BETWEEN :Desde
+    AND :Hasta
+	AND tm.idTipoMovimiento IN (26, 18, 4, 28, 29, 48, 57, 60, 66, 98, 99, 101, 102)
+	AND b.Estado <> 'A'
+	
+ORDER BY
+	b.fecha
+;
