@@ -1,0 +1,43 @@
+SELECT
+  Coleccion,
+  IdProducto,
+  Producto,
+  Medida,
+/*  iif( cast(_IdDeposito_STK as varchar(10)) = '%', 'Todos',
+     (select first 1 descripcion from deposito where iddeposito = cast(_IdDeposito_STK as integer))) as Deposito,*/
+  sum(case when iddep = 3  then consumo + perdida else 0 end) as compra,
+  sum(case when iddep = 4  then consumo + perdida else 0 end) as cocina,
+  sum(case when iddep = 5  then consumo + perdida else 0 end) as ciudad_nueva,
+  sum(case when iddep = 6  then consumo + perdida else 0 end) as espana,
+  sum(case when iddep = 7  then consumo + perdida else 0 end) as sajonia,
+  sum(case when iddep = 8  then consumo + perdida else 0 end) as paseo1811,
+  sum(case when iddep = 9  then consumo + perdida else 0 end) as dark_kitchen,
+  sum(case when iddep = 10 then consumo + perdida else 0 end) as century,
+  sum(case when iddep = 11 then consumo + perdida else 0 end) as san_lorenzo,
+  sum(case when iddep = 12 then consumo + perdida else 0 end) as madero,
+  sum(case when iddep = 13 then consumo + perdida else 0 end) as cocina_movil,
+  sum(case when iddep = 14 then consumo + perdida else 0 end) as eventos_admin,
+  sum(case when iddep = 15 then consumo + perdida else 0 end) as petromax,
+  sum(case when iddep = 16 then consumo + perdida else 0 end) as mburukuya,
+  sum(Consumo) as consumo,
+  sum(Perdida) as perdida,
+  coalesce(round(SUM(consumo + perdida),2),0) AS Total
+FROM
+  SP_STK_CONSUMO_X_LOCAL(
+  :Desde_STK,
+  :Hasta_STK,
+  '1',
+  :IdSucursal_STK,
+  :IdDeposito_STK,
+  '%',
+  '%',
+  :IdColeccion_STK,
+  :RPT_USER)
+GROUP BY
+  Coleccion,
+  IdProducto,
+  Producto,
+  Medida
+ORDER BY
+  Coleccion,
+  Producto
