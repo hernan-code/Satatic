@@ -1,0 +1,52 @@
+/*RECETAS*/
+ 
+SELECT
+	TRIM(CASE WHEN B.PRODUCCION = 1 AND B.FABRICA = 0 THEN 'SI'
+	ELSE 'NO'
+	END) AS PRODUCCION,
+    CAST(O.FECHA_inicio AS DATE) AS FECHAINICIO,
+    CAST(o.FECHA_FINAL AS DATE) AS FECHAFIN,
+    o.IDPDC_ORDENTRABAJO,
+    TRIM(CASE
+        WHEN o.ESTADO = 0 THEN 'ACTIVO'
+        WHEN o.ESTADO = 1 THEN 'INACTIVO'
+        WHEN o.ESTADO = 2 THEN 'ANULADO'
+    END) AS ESTADO,
+    m2.DESCRIPCION AS MARCA,
+    F.DESCRIPCION AS FAMILIA,
+    L.DESCRIPCION AS LINEA,
+    o.idarticulo AS IdReceta,
+    b.descripcion AS Receta,
+    m.idarticulo,
+    a.descripcion AS MateriaPrima,
+    sum(m.cantidad) AS cantidad,
+    cf.COSTO AS Costo
+FROM
+    pdc_ordentrabajo o
+    INNER JOIN pdc_materiaprima m ON m.idpdc_ordentrabajo = o.idpdc_ordentrabajo
+    INNER JOIN articulo a ON a.idarticulo = m.idarticulo
+    INNER JOIN articulo b ON b.idarticulo = o.idarticulo
+    INNER JOIN LINEA l ON L.IDLINEA = b.IDLINEA
+    INNER JOIN FAMILIAARTICULO f ON F.IDFAMILIA = L.IDFAMILIA
+    INNER JOIN MARCA m2 ON m2.IDMARCA = b.IDMARCA
+    INNER JOIN COSTO_FINAL cf ON CF.IDARTICULO = a.IDARTICULO
+WHERE
+    o.tipo = 1
+    AND o.ESTADO = 0
+    and cf.fecha = '2025-10-31 00:00:00.000'
+    AND b.idarticulo = '10336'
+GROUP BY
+	B.PRODUCCION, 
+	B.FABRICA,
+    O.FECHA_inicio,
+    o.FECHA_FINAL,
+    o.IDPDC_ORDENTRABAJO,
+    o.ESTADO,
+    m2.DESCRIPCION,
+    F.DESCRIPCION,
+    L.DESCRIPCION,
+    o.idarticulo,
+    b.descripcion,
+    m.idarticulo,
+    a.descripcion,
+    cf.COSTO
