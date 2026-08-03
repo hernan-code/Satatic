@@ -1,0 +1,15 @@
+SELECT
+    COALESCE(mes, 'Total Resultado') AS mes,
+    sucursal,
+    origen,
+    SUM(total_importe) AS "Suma - total_importe"
+FROM
+    info.ventas_movimientos
+WHERE
+    fecha BETWEEN :Desde AND :Hasta
+GROUP BY
+    ROLLUP (mes, sucursal, origen)
+ORDER BY
+    mes,
+    sucursal,
+    origen;
